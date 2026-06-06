@@ -38,7 +38,7 @@ class ChatRequest(BaseModel):
 
 class TTSRequest(BaseModel):
     text: str
-    voice: str = "aura-asteria-en"
+    voice: str = "aura-luna-en"
 
 @app.post("/chat")
 async def chat(request: ChatRequest):
