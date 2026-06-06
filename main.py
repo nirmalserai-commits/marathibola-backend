@@ -118,3 +118,12 @@ async def speech_to_text(file: UploadFile = File(...)):
         transcript = result["results"]["channels"][0]["alternatives"][0]["transcript"]
         return {"transcript": transcript}
     except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/dump/class/{student_id}")
+async def class_dump(student_id: str):
+    return generate_class_dump(student_id)
+
+@app.get("/dump/weekly")
+async def weekly_dump():
+    return generate_weekly_dump()
