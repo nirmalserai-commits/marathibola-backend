@@ -1,6 +1,6 @@
 # marathibola.com - Nora AI Marathi Teacher
-# Backend Server - Version 3 - ElevenLabs Voice
-# Built with Claude | Jai Shri Krishna
+# Backend Server - Version 4 - ElevenLabs Riya Rao Voice
+# Built with Claude | Jai Shri Krishna | Jai Maharashtra
 
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -39,14 +39,14 @@ class ChatRequest(BaseModel):
 
 class TTSRequest(BaseModel):
     text: str
-    voice: str = "Rachel"
+    voice: str = "Riya"
 
 class STTRequest(BaseModel):
     audio_url: str = ""
 
 @app.get("/")
 async def root():
-    return {"status": "Nora is alive", "version": "3.0", "voice": "ElevenLabs Rachel"}
+    return {"status": "Nora is alive", "version": "4.0", "voice": "ElevenLabs Riya Rao"}
 
 @app.get("/health")
 async def health():
@@ -74,7 +74,8 @@ async def chat(request: ChatRequest):
 async def text_to_speech(request: TTSRequest):
     try:
         ELEVENLABS_API_KEY_ENV = os.environ.get("ELEVENLABS_API_KEY")
-        voice_id = "21m00Tcm4TlvDq8ikWAM"
+        # ✅ FIXED: Riya Rao Voice ID (was Rachel before)
+        voice_id = "vYENaCJHl4vFKNDYPr8y"
         url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
         headers = {
             "xi-api-key": ELEVENLABS_API_KEY_ENV,
@@ -84,8 +85,9 @@ async def text_to_speech(request: TTSRequest):
             "text": request.text,
             "model_id": "eleven_multilingual_v2",
             "voice_settings": {
-                "stability": 0.5,
-                "similarity_boost": 0.75
+                # ✅ FIXED: Tuned for warm Indian voice
+                "stability": 0.35,
+                "similarity_boost": 0.85
             }
         }
         async with httpx.AsyncClient(timeout=30.0) as client_http:
