@@ -174,6 +174,9 @@ async def text_to_speech(request: TTSRequest):
         ELEVENLABS_API_KEY_ENV = os.environ.get("ELEVENLABS_API_KEY")
         voice_id = "vYENaCJHl4vFKNDYPr8y"  # Riya Rao
 
+        # ✅ FIXED: Phonetic pronunciation fix for ElevenLabs
+        request.text = request.text.replace("Marathi", "Maa-raa-thi").replace("marathi", "Maa-raa-thi")
+
         url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}/stream"  # ✅ FIXED: /stream endpoint
 
         headers = {
