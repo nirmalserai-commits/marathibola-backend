@@ -1,5 +1,5 @@
 # marathibola.com - Nora AI Marathi Teacher
-# Backend Server - Version 4.3 - Nora NS Marathi Voice + eleven_v3
+# Backend Server - Version 4.4 - Marathi immersion + turbo voice + speed fix
 # Built with Claude | Jai Shri Krishna | Jai Maharashtra
 
 from fastapi import FastAPI, UploadFile, File, HTTPException
@@ -29,7 +29,7 @@ HF_TOKEN = os.environ.get("HF_TOKEN")
 client = anthropic.Anthropic(api_key=CLAUDE_API_KEY)
 session_manager = SessionManager()
 
-# ✅ UPGRADED: Structured lesson curriculum — Version 4.2
+# ✅ UPGRADED: Structured lesson curriculum — Version 4.4
 NORA_CURRICULUM = """
 NORA'S TEACHING CURRICULUM — LESSON STRUCTURE:
 
@@ -80,56 +80,69 @@ LESSON 5 — Neighbours & Society (Day 8-10)
 
 TEACHING METHOD — ALWAYS FOLLOW THIS:
 - Teach ONE word or phrase at a time
-- Write the Marathi word in Devanagari script first
+- ALWAYS speak Marathi FIRST — say the Marathi word or sentence out loud
 - Then write pronunciation in Roman letters in brackets
-- Then give the English/Hindi meaning
-- Then give ONE real-life example sentence
-- Then ask the student to repeat or use it
+- Then give the English meaning in [square brackets]
+- Then give ONE real-life example sentence in Marathi with English translation
+- Then ask the student to repeat or respond in Marathi
+- Keep responses SHORT — maximum 3-4 lines — so voice plays fast
 - Give lots of encouragement — "शाब्बास!" (Shabbaas! = Well done!)
-- Keep lessons short, warm, and conversational
 - Never overwhelm with too many words at once
 - Always connect the lesson to real Maharashtra life
 - If a student makes a mistake, gently correct with warmth
-- Track what was taught and build on previous lessons
 
 PERSONALITY:
 - Warm, patient, encouraging like a loving didi (elder sister)
-- Celebrates every small win enthusiastically
+- Celebrates every small win enthusiastically  
 - Uses real Mumbai/Maharashtra examples
 - Makes learning feel like a conversation, not a class
 - Never makes the student feel embarrassed
 """
 
 NORA_PROMPT_EN = """You are Nora, India's first AI Marathi teacher at marathibola.com.
-You help non-Marathi speakers in Maharashtra speak Marathi confidently.
-You teach in a structured, warm, step-by-step way.
-Always use Devanagari script for Marathi words, with Roman pronunciation in brackets.
-Explain in simple English.
-Be encouraging like a loving didi teaching her younger sibling.
+Your student speaks English and wants to learn Marathi.
 
-""" + NORA_CURRICULUM + """
+YOUR GOLDEN RULE: Speak Marathi TO the student. Not about Marathi. IN Marathi.
+Like a real didi who immerses you — Marathi first, English translation in [brackets].
 
-IMPORTANT: Always respond in English with Marathi words in Devanagari script.
-When a student says they want to learn or asks what to do — start Lesson 1 immediately.
-When a student greets you — respond warmly and offer to start the lesson."""
+EXAMPLE of how you speak:
+"नमस्ते! (Namaste!) [Hello!] 
+आज आपण मराठी शिकूया! (Aaj aapan Marathi shikuya!) [Today we learn Marathi!]
+सांगा — नमस्ते म्हणा! (Saanga — Namaste mhana!) [Say it — say Namaste!]"
+
+CRITICAL RULES:
+- ALWAYS Marathi first, English translation in [brackets] after
+- Keep responses SHORT — max 3 sentences — voice must play fast
+- Never write long paragraphs — short, punchy, conversational
+- One word or phrase at a time — never dump multiple words
+- Always end with a question or prompt for the student to respond
+
+""" + NORA_CURRICULUM
 
 NORA_PROMPT_HI = """You are Nora, India's first AI Marathi teacher at marathibola.com.
-You help non-Marathi speakers in Maharashtra speak Marathi confidently.
-You teach in a structured, warm, step-by-step way.
-Always use Devanagari script for Marathi words, with Roman pronunciation in brackets.
-IMPORTANT: Always explain in Hindi (हिंदी). Never use English explanations.
-Be encouraging like a loving didi teaching her younger sibling.
+Your student speaks Hindi and wants to learn Marathi.
 
-""" + NORA_CURRICULUM + """
+YOUR GOLDEN RULE: Speak Marathi TO the student. IN Marathi. Hindi translation in [brackets].
 
-IMPORTANT: हमेशा हिंदी में जवाब दें। मराठी शब्द देवनागरी में लिखें।
-जब कोई छात्र सीखना चाहे — तुरंत Lesson 1 शुरू करें।"""
+EXAMPLE of how you speak:
+"नमस्ते! (Namaste!) [नमस्कार!]
+आज आपण मराठी शिकूया! (Aaj aapan Marathi shikuya!) [आज हम मराठी सीखेंगे!]
+सांगा — नमस्ते म्हणा! [बोलो — नमस्ते कहो!]"
+
+CRITICAL RULES:
+- ALWAYS Marathi first, Hindi translation in [brackets] after
+- Keep responses SHORT — max 3 sentences — voice must play fast
+- Never write long paragraphs — short, punchy, conversational
+- One word or phrase at a time
+- Always end with a question or prompt for the student to respond
+
+""" + NORA_CURRICULUM
 
 class ChatRequest(BaseModel):
     message: str
     student_id: str = "default"
     student_name: str = "Student"
-    lang: str = "en"  # ✅ NEW: frontend sends 'en' or 'hi'
+    lang: str = "en"
 
 class TTSRequest(BaseModel):
     text: str
@@ -140,7 +153,7 @@ class STTRequest(BaseModel):
 
 @app.get("/")
 async def root():
-    return {"status": "Nora is alive", "version": "4.3", "voice": "ElevenLabs Nora NS - Marathi"}
+    return {"status": "Nora is alive", "version": "4.4", "voice": "ElevenLabs Nora NS - Marathi Turbo"}
 
 @app.get("/health")
 async def health():
@@ -152,12 +165,11 @@ async def chat(request: ChatRequest):
         session = session_manager.get_session(request.student_id)
         session.append({"role": "user", "content": request.message})
 
-        # ✅ FIXED: Pick correct prompt based on language
         system_prompt = NORA_PROMPT_HI if request.lang == "hi" else NORA_PROMPT_EN
 
         response = client.messages.create(
             model="claude-opus-4-5",
-            max_tokens=1024,
+            max_tokens=300,  # ✅ REDUCED: shorter responses = faster voice
             system=system_prompt,
             messages=session
         )
@@ -174,8 +186,9 @@ async def text_to_speech(request: TTSRequest):
         ELEVENLABS_API_KEY_ENV = os.environ.get("ELEVENLABS_API_KEY")
         voice_id = "WlkSq4ubXr1JwPngJWtM"  # ✅ Nora NS - Marathi Voice
 
-        # ✅ FIXED: Phonetic pronunciation fix for ElevenLabs
-        request.text = request.text.replace("Marathi", "Maa-raa-thi").replace("marathi", "Maa-raa-thi")
+        # Clean text for TTS — remove brackets and Roman text, speak only Marathi + clean English
+        text = request.text
+        text = text.replace("Marathi", "Maa-raa-thi").replace("marathi", "Maa-raa-thi")
 
         url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}/stream"
 
@@ -185,29 +198,33 @@ async def text_to_speech(request: TTSRequest):
             "Accept": "audio/mpeg"
         }
         payload = {
-            "text": request.text,
-            "model_id": "eleven_v3",  # ✅ UPGRADED: eleven_v3 - first-class Marathi support
+            "text": text,
+            "model_id": "eleven_turbo_v2_5",  # ✅ SPEED FIX: turbo model — 3x faster than v3
             "voice_settings": {
-                "stability": 0.35,
-                "similarity_boost": 0.85
+                "stability": 0.60,        # ✅ FIXED: was 0.35 — now more mature, less kiddish
+                "similarity_boost": 0.80, # ✅ TUNED: balanced naturalness
+                "style": 0.20,            # ✅ NEW: adds warmth without over-acting
+                "use_speaker_boost": True # ✅ NEW: cleaner audio quality
             },
-            "optimize_streaming_latency": 3
+            "optimize_streaming_latency": 4  # ✅ MAX latency optimization
         }
 
-        # ✅ FIXED: Stream audio chunks as they arrive instead of waiting for full file
         async def audio_stream():
             async with httpx.AsyncClient(timeout=30.0) as client_http:
                 async with client_http.stream("POST", url, json=payload, headers=headers) as response:
                     if response.status_code != 200:
                         raise HTTPException(status_code=500, detail="ElevenLabs stream error")
-                    async for chunk in response.aiter_bytes(chunk_size=1024):
+                    async for chunk in response.aiter_bytes(chunk_size=512):  # ✅ SMALLER chunks = faster first byte
                         if chunk:
                             yield chunk
 
         return StreamingResponse(
             audio_stream(),
             media_type="audio/mpeg",
-            headers={"Cache-Control": "no-cache"}
+            headers={
+                "Cache-Control": "no-cache",
+                "X-Accel-Buffering": "no"  # ✅ NEW: prevents nginx buffering delay
+            }
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
