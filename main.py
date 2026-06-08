@@ -1,5 +1,5 @@
 # marathibola.com - Nora AI Marathi Teacher
-# Backend Server - Version 4.1 - Bug Fixes: Hindi language + TTS speed
+# Backend Server - Version 4.3 - Nora NS Marathi Voice + eleven_v3
 # Built with Claude | Jai Shri Krishna | Jai Maharashtra
 
 from fastapi import FastAPI, UploadFile, File, HTTPException
@@ -133,14 +133,14 @@ class ChatRequest(BaseModel):
 
 class TTSRequest(BaseModel):
     text: str
-    voice: str = "Riya"
+    voice: str = "Nora"
 
 class STTRequest(BaseModel):
     audio_url: str = ""
 
 @app.get("/")
 async def root():
-    return {"status": "Nora is alive", "version": "4.2", "voice": "ElevenLabs Riya Rao"}
+    return {"status": "Nora is alive", "version": "4.3", "voice": "ElevenLabs Nora NS - Marathi"}
 
 @app.get("/health")
 async def health():
@@ -172,12 +172,12 @@ async def chat(request: ChatRequest):
 async def text_to_speech(request: TTSRequest):
     try:
         ELEVENLABS_API_KEY_ENV = os.environ.get("ELEVENLABS_API_KEY")
-        voice_id = "vYENaCJHl4vFKNDYPr8y"  # Riya Rao
+        voice_id = "WlkSq4ubXr1JwPngJWtM"  # ✅ Nora NS - Marathi Voice
 
         # ✅ FIXED: Phonetic pronunciation fix for ElevenLabs
         request.text = request.text.replace("Marathi", "Maa-raa-thi").replace("marathi", "Maa-raa-thi")
 
-        url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}/stream"  # ✅ FIXED: /stream endpoint
+        url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}/stream"
 
         headers = {
             "xi-api-key": ELEVENLABS_API_KEY_ENV,
@@ -186,12 +186,12 @@ async def text_to_speech(request: TTSRequest):
         }
         payload = {
             "text": request.text,
-            "model_id": "eleven_multilingual_v2",
+            "model_id": "eleven_v3",  # ✅ UPGRADED: eleven_v3 - first-class Marathi support
             "voice_settings": {
                 "stability": 0.35,
                 "similarity_boost": 0.85
             },
-            "optimize_streaming_latency": 3  # ✅ NEW: reduces first-byte delay significantly
+            "optimize_streaming_latency": 3
         }
 
         # ✅ FIXED: Stream audio chunks as they arrive instead of waiting for full file
