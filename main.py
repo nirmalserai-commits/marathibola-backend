@@ -203,7 +203,7 @@ async def text_to_speech(request: TTSRequest):
             "voice_settings": {
                 "stability": 0.60,        # ✅ FIXED: was 0.35 — now more mature, less kiddish
                 "similarity_boost": 0.80, # ✅ TUNED: balanced naturalness
-                "style": 0.20,            # ✅ NEW: adds warmth without over-acting
+                "style": 0.10,            # ✅ NEW: adds warmth without over-acting
                 "use_speaker_boost": True # ✅ NEW: cleaner audio quality
             },
             "optimize_streaming_latency": 4  # ✅ MAX latency optimization
