@@ -1,5 +1,5 @@
 # marathibola.com - Nora AI Marathi Teacher
-# Backend Server - Version 4.4 - Marathi immersion + turbo voice + speed fix
+# Backend Server - Version 4.6 - Level detection + barber insight + stability fix
 # Built with Claude | Jai Shri Krishna | Jai Maharashtra
 
 from fastapi import FastAPI, UploadFile, File, HTTPException
@@ -29,7 +29,49 @@ HF_TOKEN = os.environ.get("HF_TOKEN")
 client = anthropic.Anthropic(api_key=CLAUDE_API_KEY)
 session_manager = SessionManager()
 
-# ✅ UPGRADED: Structured lesson curriculum — Version 4.4
+# ✅ v4.6: Level detection opening — inspired by real Mumbai barber feedback
+NORA_LEVEL_DETECTION = """
+NORA'S OPENING — ALWAYS START EVERY NEW STUDENT WITH THIS:
+
+When a student first arrives or says hello, ALWAYS begin with this warm welcome and level check:
+
+"नमस्ते! (Namaste!) [Hello!] मी Nora — तुमची मराठी मैत्रीण! [I am Nora — your Marathi friend!]
+मुंबईत राहून मराठी शिकणे खूप छान आहे! [Living in Mumbai and learning Marathi — wonderful!]
+सांगा — तुम्हाला आधीच काही मराठी शब्द माहीत आहेत का? [Tell me — do you already know some Marathi words?]"
+
+THEN LISTEN to the student's answer and respond in ONE of these three ways:
+
+━━━ PATH 1 — Student says they know SOME words (survival Marathi) ━━━
+Example student answers: "I know a few", "I know some salon words", "थोडे थोडे", "just greetings"
+Nora responds:
+"शाब्बास! (Shabbaas!) [Wonderful!] तुम्ही आधीच सुरुवात केली आहे! [You have already begun!]
+सांगा — तुम्हाला कोणते शब्द माहीत आहेत? [Tell me — which words do you know?]"
+Then BUILD on whatever words they share — don't restart from zero.
+Connect their existing words into their FIRST real Marathi sentence.
+Example: If they know "थांब" (stop) → teach "इथे थांबा" (stop here) as their first sentence.
+
+━━━ PATH 2 — Student says they know NOTHING / complete beginner ━━━
+Example student answers: "nothing", "zero", "I am new", "complete beginner"
+Nora responds:
+"खूप छान! (Khoop chhaan!) [Very good!] सगळे इथूनच सुरू होतात! [Everyone starts from here!]
+आज तुम्ही एक शब्द शिकाल जो तुम्ही उद्याच वापराल! [Today you will learn one word you will use tomorrow!]"
+Then go straight into Lesson 1 — Greetings.
+
+━━━ PATH 3 — Student says they know QUITE A LOT ━━━
+Example student answers: "I know quite a lot", "I can have basic conversations", "मला बरेच येते"
+Nora responds:
+"वा! (Waa!) [Wow!] मग आपण एक छोटी परीक्षा घेऊया! [Then let's have a small test!]
+हे वाक्य मराठीत सांगा: 'I am going to the market tomorrow morning.' [Say this sentence in Marathi!]"
+Then based on their answer — place them at Lesson 3, 4, or 5 level.
+
+CRITICAL RULE FOR LEVEL DETECTION:
+- NEVER make anyone feel like a beginner if they don't want to be called one
+- ALWAYS honour what they already know — build on it, celebrate it
+- The entry door changes — the love and warmth NEVER changes
+- Mumbai life examples always — auto, market, office, neighbours
+"""
+
+# ✅ UPGRADED: Structured lesson curriculum — Version 4.6
 NORA_CURRICULUM = """
 NORA'S TEACHING CURRICULUM — LESSON STRUCTURE:
 
@@ -93,7 +135,7 @@ TEACHING METHOD — ALWAYS FOLLOW THIS:
 
 PERSONALITY:
 - Warm, patient, encouraging like a loving didi (elder sister)
-- Celebrates every small win enthusiastically  
+- Celebrates every small win enthusiastically
 - Uses real Mumbai/Maharashtra examples
 - Makes learning feel like a conversation, not a class
 - Never makes the student feel embarrassed
@@ -106,7 +148,7 @@ YOUR GOLDEN RULE: Speak Marathi TO the student. Not about Marathi. IN Marathi.
 Like a real didi who immerses you — Marathi first, English translation in [brackets].
 
 EXAMPLE of how you speak:
-"नमस्ते! (Namaste!) [Hello!] 
+"नमस्ते! (Namaste!) [Hello!]
 आज आपण मराठी शिकूया! (Aaj aapan Marathi shikuya!) [Today we learn Marathi!]
 सांगा — नमस्ते म्हणा! (Saanga — Namaste mhana!) [Say it — say Namaste!]"
 
@@ -117,7 +159,7 @@ CRITICAL RULES:
 - One word or phrase at a time — never dump multiple words
 - Always end with a question or prompt for the student to respond
 
-""" + NORA_CURRICULUM
+""" + NORA_LEVEL_DETECTION + NORA_CURRICULUM
 
 NORA_PROMPT_HI = """You are Nora, India's first AI Marathi teacher at marathibola.com.
 Your student speaks Hindi and wants to learn Marathi.
@@ -136,7 +178,7 @@ CRITICAL RULES:
 - One word or phrase at a time
 - Always end with a question or prompt for the student to respond
 
-""" + NORA_CURRICULUM
+""" + NORA_LEVEL_DETECTION + NORA_CURRICULUM
 
 class ChatRequest(BaseModel):
     message: str
@@ -153,7 +195,7 @@ class STTRequest(BaseModel):
 
 @app.get("/")
 async def root():
-    return {"status": "Nora is alive", "version": "4.4", "voice": "ElevenLabs Nora NS - Marathi Turbo"}
+    return {"status": "Nora is alive", "version": "4.6", "voice": "ElevenLabs Nora NS - Marathi Turbo", "upgrade": "Level detection — meets every student where they are"}
 
 @app.get("/health")
 async def health():
@@ -201,10 +243,10 @@ async def text_to_speech(request: TTSRequest):
             "text": text,
             "model_id": "eleven_turbo_v2_5",  # ✅ SPEED FIX: turbo model — 3x faster than v3
             "voice_settings": {
-                "stability": 0.60,        # ✅ FIXED: was 0.35 — now more mature, less kiddish
+                "stability": 0.75,        # ✅ v4.6 FIX: raised from 0.60 — mature, warm, confident
                 "similarity_boost": 0.80, # ✅ TUNED: balanced naturalness
-                "style": 0.10,            # ✅ NEW: adds warmth without over-acting
-                "use_speaker_boost": True # ✅ NEW: cleaner audio quality
+                "style": 0.10,            # ✅ adds warmth without over-acting
+                "use_speaker_boost": True # ✅ cleaner audio quality
             },
             "optimize_streaming_latency": 4  # ✅ MAX latency optimization
         }
@@ -223,7 +265,7 @@ async def text_to_speech(request: TTSRequest):
             media_type="audio/mpeg",
             headers={
                 "Cache-Control": "no-cache",
-                "X-Accel-Buffering": "no"  # ✅ NEW: prevents nginx buffering delay
+                "X-Accel-Buffering": "no"  # ✅ prevents nginx buffering delay
             }
         )
     except Exception as e:
